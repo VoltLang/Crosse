@@ -1,0 +1,11 @@
+// SPDX-FileCopyrightText: 2024, Jakob Bornecrantz.
+// SPDX-License-Identifier: MIT OR Apache-2.0 OR BSL-1.0
+
+
+/*
+ * These targets are commonly available.
+ */
+
+LLVM_TARGETMCA(X86)
+
+#undef LLVM_TARGETMCA

@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2024, Jakob Bornecrantz.
+# SPDX-License-Identifier: CC0-1.0
+
+# Ignore Python caches.
+__pycache__/
+
+# The folder where output is written.
+out/
+
+# The fetched header files.
+input/llvm/llvm-*/

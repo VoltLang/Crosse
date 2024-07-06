@@ -1,0 +1,13 @@
+// SPDX-FileCopyrightText: 2024, Jakob Bornecrantz.
+// SPDX-License-Identifier: MIT OR Apache-2.0 OR BSL-1.0
+
+
+/*
+ * These targets are commonly available.
+ */
+
+LLVM_ASM_PRINTER(AArch64)
+LLVM_ASM_PRINTER(ARM)
+LLVM_ASM_PRINTER(X86)
+
+#undef LLVM_ASM_PARSER
