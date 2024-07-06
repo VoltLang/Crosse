@@ -1,0 +1,4 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Crosse
+Upstream-Contact: Jakob Bornecrantz <wallbraker@gmail.com>
+Source: https://github.com/VoltLang/Crosse
