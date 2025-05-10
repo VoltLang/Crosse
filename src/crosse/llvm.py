@@ -48,7 +48,6 @@ __type_one_to_one = {
     'LLVMAtomicOrdering',
     'LLVMAtomicRMWBinOp',
     'LLVMAttributeIndex',
-    'LLVMAttributeIndex',
     'LLVMCodeGenFileType',
     'LLVMCodeGenOptLevel',
     'LLVMCodeModel',
