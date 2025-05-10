@@ -221,7 +221,7 @@ def write_symbol_declaration(file, first: int, symbol: Symbol, language: str):
 if __name__ == '__main__':
 
     first = 10
-    last = 19
+    last = 21
     versions = list(range(first, last+1))
     mods = create_modules()
     language = 'd'

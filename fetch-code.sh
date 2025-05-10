@@ -8,7 +8,7 @@ LLVM_DIR="/home/jakob/Prog/LLVM/llvm-project"
 cd $LLVM_DIR
 
 # Reversed to better deal with files being removed staying around.
-VERSIONS=(18 17 16 15 14 13 12 11 11 10)
+VERSIONS=(20 19 18 17 16 15 14 13 12 11 11 10)
 FILES=(
 "Analysis.h"
 "BitReader.h"
@@ -49,7 +49,7 @@ git checkout main
 git rebase
 
 # Copy top of tree.
-do_the_copy "19"
+do_the_copy "21"
 
 # Go through the versions we are looking for.
 for VERSION in ${VERSIONS[@]}; do
