@@ -5,6 +5,12 @@ module lib.llvm.c.Types;
 
 
 alias LLVMBool = u32;
+version (LLVMVersion18AndAbove) {
+	alias LLVMFastMathFlags = u32;
+}
+version (LLVMVersion19AndAbove) {
+	alias LLVMGEPNoWrapFlags = u32;
+}
 
 
 struct LLVMAttribute {}

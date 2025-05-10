@@ -9,6 +9,9 @@ import lib.llvm.c.Target;
 
 struct LLVMTargetMachine {} alias  LLVMTargetMachineRef = LLVMTargetMachine*;
 struct LLVMTarget {} alias LLVMTargetRef = LLVMTarget*;
+version (LLVMVersion18AndAbove) {
+	struct LLVMTargetMachineOptions {} alias LLVMTargetMachineOptionsRef = LLVMTargetMachineOptions*;
+}
 
 
 extern(C):
