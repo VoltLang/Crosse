@@ -62,6 +62,7 @@ __type_one_to_one = {
     'LLVMDWARFTypeEncoding',
     'LLVMFastMathFlags',
     'LLVMFatalErrorHandler',
+    'LLVMGEPNoWrapFlags',
     'LLVMGlobalISelAbortMode',
     'LLVMInlineAsmDialect',
     'LLVMIntPredicate',
