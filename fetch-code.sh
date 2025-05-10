@@ -57,3 +57,6 @@ for VERSION in ${VERSIONS[@]}; do
 
 	do_the_copy "${VERSION}"
 done
+
+# Restore the source tree.
+git reset --hard
