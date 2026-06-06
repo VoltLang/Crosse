@@ -1,5 +1,11 @@
-# SPDX-FileCopyrightText: 2024, Jakob Bornecrantz.
+# SPDX-FileCopyrightText: 2024-2026, Jakob Bornecrantz.
 # SPDX-License-Identifier: CC0-1.0
+
+# VSCode & Cursor.
+.vscode/
+
+# Python venv.
+.venv/
 
 # Ignore Python caches.
 __pycache__/
