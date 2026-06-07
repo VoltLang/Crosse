@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2024, Jakob Bornecrantz.
 # SPDX-License-Identifier: MIT OR Apache-2.0 OR BSL-1.0
 
+import argparse
 import sys
 import os
 
@@ -168,8 +169,9 @@ def parse(version: int) -> TranslationUnit:
     return translation_unit
 
 
-def write_declaration(file, decl: Declaration, indent: str):
-    lines = str.split(decl.d_decl, '\n')
+def write_declaration(file, decl: Declaration, indent: str, language: str):
+    decl_str = decl.volt_decl if language == 'volt' else decl.d_decl
+    lines = str.split(decl_str, '\n')
     for line in lines:
         file.write('{}{}\n'.format(indent, line))
 
@@ -193,14 +195,14 @@ def sort_version_group_keys(keys: list[tuple]) -> list[tuple]:
     return sorted(keys, key=lambda key: key[0])
 
 
-def write_range_declarations(file, symbols: list[Symbol], range_idx: int, indent: str):
+def write_range_declarations(file, symbols: list[Symbol], range_idx: int, indent: str, language: str):
     decls = [symbol.ranges[range_idx].decl for symbol in symbols]
     if all(d is None for d in decls):
         file.write('{}// Removed\n'.format(indent))
         return
 
     for symbol in symbols:
-        write_declaration(file, symbol.ranges[range_idx].decl, indent)
+        write_declaration(file, symbol.ranges[range_idx].decl, indent, language)
 
 
 def write_versioned_symbol_group(file, symbols: list[Symbol], language: str):
@@ -212,7 +214,7 @@ def write_versioned_symbol_group(file, symbols: list[Symbol], language: str):
     if language == 'volt':
         if len(ranges) == 2 and last.decl is None:
             file.write('version(!LLVMVersion{}AndAbove) {}\n'.format(last.start, '{'))
-            write_range_declarations(file, symbols, 0, '\t')
+            write_range_declarations(file, symbols, 0, '\t', language)
             file.write('}\n')
             return
 
@@ -220,17 +222,17 @@ def write_versioned_symbol_group(file, symbols: list[Symbol], language: str):
         idx = len(ranges) - 1 - range_idx
         if r == last:
             file.write('version(LLVMVersion{}AndAbove) {}\n'.format(r.start, '{'))
-            write_range_declarations(file, symbols, idx, '\t')
+            write_range_declarations(file, symbols, idx, '\t', language)
         elif r == first:
             if r.decl is None:
                 file.write('}\n')
             else:
                 file.write('} else {\n')
-                write_range_declarations(file, symbols, idx, '\t')
+                write_range_declarations(file, symbols, idx, '\t', language)
                 file.write('}\n')
         else:
             file.write('{} else version(LLVMVersion{}AndAbove) {}\n'.format('}', r.start, '{'))
-            write_range_declarations(file, symbols, idx, '\t')
+            write_range_declarations(file, symbols, idx, '\t', language)
 
 
 def write_module_declarations(file, module: Module, first: int, language: str):
@@ -284,7 +286,7 @@ def write_module_declarations(file, module: Module, first: int, language: str):
 def write_symbol_declaration(file, first: int, symbol: Symbol, language: str):
     # Simple, the symbol stayed the same through all version.
     if len(symbol.ranges) == 1:
-        write_declaration(file, symbol.ranges[0].decl, '')
+        write_declaration(file, symbol.ranges[0].decl, '', language)
         return
 
     first = symbol.ranges[0]
@@ -296,7 +298,7 @@ def write_symbol_declaration(file, first: int, symbol: Symbol, language: str):
             # There from the start, removed in a later version.
             assert(first.decl != None)
             file.write('version(!LLVMVersion{}AndAbove) {}\n'.format(last.start, '{'))
-            write_declaration(file, first.decl, '\t')
+            write_declaration(file, first.decl, '\t', language)
             file.write('}\n')
             return
 
@@ -308,32 +310,38 @@ def write_symbol_declaration(file, first: int, symbol: Symbol, language: str):
             if d == None:
                 file.write('\t// Removed\n')
             else:
-                write_declaration(file, d, '\t')
+                write_declaration(file, d, '\t', language)
         elif r == first:
             if d == None:
                 file.write('}\n')
             else:
                 file.write('} else {\n')
-                write_declaration(file, d, '\t')
+                write_declaration(file, d, '\t', language)
                 file.write('}\n')
         else:
             file.write('{} else version(LLVMVersion{}AndAbove) {}\n'.format('}', r.start, '{'))
             if d == None:
                 file.write('\t// Removed\n')
             else:
-                write_declaration(file, d, '\t')
+                write_declaration(file, d, '\t', language)
     return
 
 
-if __name__ == '__main__':
+def main():
+    parser = argparse.ArgumentParser(description='Generate versioned LLVM C bindings.')
+    parser.add_argument(
+        '-l', '--language',
+        choices=['d', 'volt'],
+        default='d',
+        help='output language for generated bindings (default: d)',
+    )
+    args = parser.parse_args()
+    language = args.language
 
     first = 10
     last = 21
     versions = list(range(first, last+1))
     mods = create_modules()
-    language = 'd'
-
-    file = sys.stdout
 
     for version in versions:
         print('Parsing LLVM {}'.format(version))
