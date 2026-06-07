@@ -4,7 +4,7 @@
 import os
 import clang.cindex
 import crosse.clang
-from crosse.objects import Module
+from crosse.objects import Module, Range, Symbol
 
 
 __type_one_to_one: list[str]
@@ -330,10 +330,63 @@ def get_enum_value(parent: str, node: clang.cindex.Cursor) -> str:
     return result
 
 
+# LLVM-C functions that allocate a string the caller must free with LLVMDisposeMessage.
+# Older headers incorrectly declared these as const char *.
+__caller_freed_char_ptr_returns: set[str] = {
+    'LLVMIntrinsicCopyOverloadedName',
+    'LLVMIntrinsicCopyOverloadedName2',
+}
+
+
+def patch_char_ptr_return(decl):
+    if decl.d_decl.startswith('const(char)* '):
+        decl.d_decl = 'char* ' + decl.d_decl[len('const(char)* '):]
+    if decl.volt_decl.startswith('const(char)* '):
+        decl.volt_decl = 'char* ' + decl.volt_decl[len('const(char)* '):]
+    if '#' in decl.type_str:
+        base, ret = decl.type_str.rsplit('#', 1)
+        if ret == 'const(char)*':
+            decl.type_str = base + '#char*'
+
+
+def merge_adjacent_identical_decl_ranges(symbol: Symbol):
+    if len(symbol.ranges) <= 1:
+        return
+
+    merged = [symbol.ranges[0]]
+    for r in symbol.ranges[1:]:
+        prev = merged[-1]
+        if prev.decl is not None and r.decl is not None and prev.decl.type_str == r.decl.type_str:
+            prev.end = r.end
+            prev.decl = r.decl
+        else:
+            merged.append(r)
+    symbol.ranges = merged
+
+
+def collapse_identical_ranges(symbol: Symbol):
+    if any(r.decl is None for r in symbol.ranges):
+        return
+
+    if not all(r.decl.type_str == symbol.ranges[0].decl.type_str for r in symbol.ranges):
+        return
+
+    first = symbol.ranges[0]
+    last = symbol.ranges[-1]
+    symbol.ranges = [Range(first.start, last.end, last.decl)]
+
+
 def apply_touch_ups(mods: dict[str, Module]):
-
-
     core = mods['Core']
     del core.symbols['LLVMInitializeCore']
 
-    return
+    for mod in mods.values():
+        for name in __caller_freed_char_ptr_returns:
+            if name not in mod.symbols:
+                continue
+            symbol = mod.symbols[name]
+            for r in symbol.ranges:
+                if r.decl is not None:
+                    patch_char_ptr_return(r.decl)
+            merge_adjacent_identical_decl_ranges(symbol)
+            collapse_identical_ranges(symbol)
