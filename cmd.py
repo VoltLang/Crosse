@@ -268,13 +268,13 @@ def write_module_declarations(file, module: Module, first: int, language: str):
         else:
             versioned_function_keys.append(key)
 
-    for symbol in stable_enums:
+    for symbol in sorted(stable_enums, key=lambda s: s.name):
         write_symbol_declaration(file, first, symbol, language)
 
     for key in sort_version_group_keys(versioned_enum_keys):
         write_versioned_symbol_group(file, groups[key], language)
 
-    for symbol in stable_functions:
+    for symbol in sorted(stable_functions, key=lambda s: s.name):
         write_symbol_declaration(file, first, symbol, language)
 
     for key in sort_version_group_keys(versioned_function_keys):
