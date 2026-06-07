@@ -1,5 +1,5 @@
 /*#D*/
-// SPDX-FileCopyrightText: 2007-2024, LLVM Developers.
+// SPDX-FileCopyrightText: {{ copyright_years }}, LLVM Developers.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 module lib.llvm.c.Initialization;

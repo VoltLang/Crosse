@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT OR Apache-2.0 OR BSL-1.0
 
 import argparse
+import datetime
 import sys
 import os
 
@@ -167,6 +168,13 @@ def parse(version: int) -> TranslationUnit:
         print(diag)
 
     return translation_unit
+
+
+def expand_template(src: str) -> str:
+    return src.replace(
+        '{{ copyright_years }}',
+        '2007-{}'.format(datetime.date.today().year),
+    )
 
 
 def write_declaration(file, decl: Declaration, indent: str, language: str):
@@ -394,7 +402,7 @@ def main():
         out_name = os.path.join(out_dir, filename)
 
         with open(src_name, 'r') as src, open(out_name, 'w') as out:
-            out.write(src.read())
+            out.write(expand_template(src.read()))
             write_module_declarations(out, mod, first, language)
 
 
