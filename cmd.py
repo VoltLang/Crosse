@@ -174,6 +174,113 @@ def write_declaration(file, decl: Declaration, indent: str):
         file.write('{}{}\n'.format(indent, line))
 
 
+def symbol_version_signature(symbol: Symbol) -> tuple[tuple[int, bool], ...]:
+    return tuple((r.start, r.decl is None) for r in symbol.ranges)
+
+
+def symbol_kind(symbol: Symbol) -> str:
+    for r in symbol.ranges:
+        if r.decl is not None:
+            return r.decl.kind_str
+    raise Exception('symbol {} has no declaration'.format(symbol.name))
+
+
+def version_group_key(symbol: Symbol) -> tuple:
+    return (symbol_version_signature(symbol), symbol_kind(symbol))
+
+
+def sort_version_group_keys(keys: list[tuple]) -> list[tuple]:
+    return sorted(keys, key=lambda key: key[0])
+
+
+def write_range_declarations(file, symbols: list[Symbol], range_idx: int, indent: str):
+    decls = [symbol.ranges[range_idx].decl for symbol in symbols]
+    if all(d is None for d in decls):
+        file.write('{}// Removed\n'.format(indent))
+        return
+
+    for symbol in symbols:
+        write_declaration(file, symbol.ranges[range_idx].decl, indent)
+
+
+def write_versioned_symbol_group(file, symbols: list[Symbol], language: str):
+    symbols = sorted(symbols, key=lambda s: s.name)
+    ranges = symbols[0].ranges
+    first = ranges[0]
+    last = ranges[-1]
+
+    if language == 'volt':
+        if len(ranges) == 2 and last.decl is None:
+            file.write('version(!LLVMVersion{}AndAbove) {}\n'.format(last.start, '{'))
+            write_range_declarations(file, symbols, 0, '\t')
+            file.write('}\n')
+            return
+
+    for range_idx, r in enumerate(reversed(ranges)):
+        idx = len(ranges) - 1 - range_idx
+        if r == last:
+            file.write('version(LLVMVersion{}AndAbove) {}\n'.format(r.start, '{'))
+            write_range_declarations(file, symbols, idx, '\t')
+        elif r == first:
+            if r.decl is None:
+                file.write('}\n')
+            else:
+                file.write('} else {\n')
+                write_range_declarations(file, symbols, idx, '\t')
+                file.write('}\n')
+        else:
+            file.write('{} else version(LLVMVersion{}AndAbove) {}\n'.format('}', r.start, '{'))
+            write_range_declarations(file, symbols, idx, '\t')
+
+
+def write_module_declarations(file, module: Module, first: int, language: str):
+    symbols = list(module.symbols.values())
+    groups: dict[tuple, list[Symbol]] = dict()
+
+    for symbol in symbols:
+        if len(symbol.ranges) == 1:
+            continue
+        key = version_group_key(symbol)
+        if key not in groups:
+            groups[key] = []
+        groups[key].append(symbol)
+
+    stable_enums: list[Symbol] = []
+    stable_functions: list[Symbol] = []
+    versioned_enum_keys: list[tuple] = []
+    versioned_function_keys: list[tuple] = []
+    seen_versioned_keys: set[tuple] = set()
+
+    for symbol in symbols:
+        if len(symbol.ranges) == 1:
+            if symbol_kind(symbol) == 'enum':
+                stable_enums.append(symbol)
+            else:
+                stable_functions.append(symbol)
+            continue
+
+        key = version_group_key(symbol)
+        if key in seen_versioned_keys:
+            continue
+        seen_versioned_keys.add(key)
+        if symbol_kind(symbol) == 'enum':
+            versioned_enum_keys.append(key)
+        else:
+            versioned_function_keys.append(key)
+
+    for symbol in stable_enums:
+        write_symbol_declaration(file, first, symbol, language)
+
+    for key in sort_version_group_keys(versioned_enum_keys):
+        write_versioned_symbol_group(file, groups[key], language)
+
+    for symbol in stable_functions:
+        write_symbol_declaration(file, first, symbol, language)
+
+    for key in sort_version_group_keys(versioned_function_keys):
+        write_versioned_symbol_group(file, groups[key], language)
+
+
 def write_symbol_declaration(file, first: int, symbol: Symbol, language: str):
     # Simple, the symbol stayed the same through all version.
     if len(symbol.ranges) == 1:
@@ -282,7 +389,6 @@ if __name__ == '__main__':
         out.write(src.read())
         src.close()
 
-        for symbol in mod.symbols.values():
-            write_symbol_declaration(out, first, symbol, language)
+        write_module_declarations(out, mod, first, language)
 
         out.close()
