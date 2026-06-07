@@ -27,6 +27,7 @@ FILES=(
 "Target.h"
 "TargetMachine.h"
 "Types.h"
+"Visibility.h"
 )
 
 do_the_copy () {
