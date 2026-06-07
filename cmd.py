@@ -377,18 +377,18 @@ if __name__ == '__main__':
 
     crosse.llvm.apply_touch_ups(mods)
 
+    out_dir = get_path_in_script_dir('out')
+    os.makedirs(out_dir, exist_ok=True)
+
     for mod in mods.values():
         filename = mod.name + '.' + language
         src_name = get_path_in_script_dir('input', 'llvm', 'templates', language, filename)
-        out_name = get_path_in_script_dir('out', filename)
+        out_name = os.path.join(out_dir, filename)
 
-        src = open(src_name, 'r')
-        out = open(out_name, 'w')
+        with open(src_name, 'r') as src, open(out_name, 'w') as out:
+            out.write(src.read())
+            write_module_declarations(out, mod, first, language)
 
-        # Copy the template
-        out.write(src.read())
-        src.close()
 
-        write_module_declarations(out, mod, first, language)
-
-        out.close()
+if __name__ == '__main__':
+    main()
